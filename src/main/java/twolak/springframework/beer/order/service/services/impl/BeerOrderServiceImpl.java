@@ -1,4 +1,4 @@
-package twolak.springframework.beer.order.service.services;
+package twolak.springframework.beer.order.service.services.impl;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +16,8 @@ import twolak.springframework.beer.order.service.domain.Customer;
 import twolak.springframework.beer.order.service.domain.OrderStatusEnum;
 import twolak.springframework.beer.order.service.repositories.BeerOrderRepository;
 import twolak.springframework.beer.order.service.repositories.CustomerRepository;
+import twolak.springframework.beer.order.service.services.BeerOrderService;
+import twolak.springframework.beer.order.service.services.beer.BeerService;
 import twolak.springframework.beer.order.service.web.mappers.BeerOrderMapper;
 import twolak.springframework.beer.order.service.web.model.BeerOrderDto;
 import twolak.springframework.beer.order.service.web.model.BeerOrderPagedList;
@@ -33,6 +35,7 @@ public class BeerOrderServiceImpl implements BeerOrderService {
     private final CustomerRepository customerRepository;
     private final BeerOrderMapper beerOrderMapper;
     private final ApplicationEventPublisher publisher;
+    private final BeerService beerService;
 
     @Override
     public BeerOrderPagedList listOrders(UUID customerId, Pageable pageable) {
@@ -57,7 +60,12 @@ public class BeerOrderServiceImpl implements BeerOrderService {
             beerOrder.setId(null);//should be null
             beerOrder.setCustomer(customerOptional.get());
             beerOrder.setOrderStatus(OrderStatusEnum.NEW);
-            beerOrder.getBeerOrderLines().forEach(line -> line.setBeerOrder(beerOrder));
+            beerOrder.getBeerOrderLines().forEach(line -> {
+                line.setBeerOrder(beerOrder);
+                this.beerService.getBeerByUpc(line.getUpc()).ifPresent(beerDto-> {
+                    line.setBeerId(beerDto.getId());
+                });
+            });
             
             BeerOrder savedBeerOrder = this.beerOrderRepository.saveAndFlush(beerOrder);
             

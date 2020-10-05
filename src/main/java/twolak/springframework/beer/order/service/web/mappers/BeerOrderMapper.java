@@ -1,6 +1,7 @@
 package twolak.springframework.beer.order.service.web.mappers;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import twolak.springframework.beer.order.service.domain.BeerOrder;
 import twolak.springframework.beer.order.service.web.model.BeerOrderDto;
 
@@ -10,6 +11,8 @@ import twolak.springframework.beer.order.service.web.model.BeerOrderDto;
  */
 @Mapper(uses = {DateMapper.class, BeerOrderLineMapper.class})
 public interface BeerOrderMapper {
+    
+    @Mapping(target = "customerId", source = "customer.id")
     BeerOrderDto beerOrderToDto(BeerOrder beerOrder);
     
     BeerOrder dtoToBeerOrder(BeerOrderDto beerOrderDto);

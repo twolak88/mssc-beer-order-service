@@ -2,6 +2,7 @@ package twolak.springframework.beer.order.service.bootstrap;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import twolak.springframework.beer.order.service.domain.Customer;
@@ -11,6 +12,7 @@ import twolak.springframework.beer.order.service.repositories.CustomerRepository
  *
  * @author twolak
  */
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class BeerOrderBootStrap implements CommandLineRunner {
@@ -28,10 +30,11 @@ public class BeerOrderBootStrap implements CommandLineRunner {
 
     private void loadCustomerData() {
         if(this.customerRepository.count() == 0) {
-            this.customerRepository.save(Customer.builder()
+            Customer savedCustomer = this.customerRepository.save(Customer.builder()
                     .customerName(TASTING_ROOM)
                     .apiKey(UUID.randomUUID())
                     .build());
+            log.debug("Tasting room created. UUID=" + savedCustomer.getId());
         }
     }
 }
