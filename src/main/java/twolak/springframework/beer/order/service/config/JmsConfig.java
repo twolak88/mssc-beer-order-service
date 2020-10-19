@@ -12,7 +12,6 @@ import org.springframework.jms.support.converter.MessageType;
  */
 @Configuration
 public class JmsConfig {
-    public static final String QUEUE = "beer-order-service";
 
     @Bean
     public MessageConverter messageConverter() {
