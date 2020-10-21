@@ -12,8 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import twolak.springframework.beer.order.service.domain.BeerOrder;
-import twolak.springframework.beer.order.service.domain.Customer;
 import twolak.springframework.beer.order.service.domain.BeerOrderStatusEnum;
+import twolak.springframework.beer.order.service.domain.Customer;
 import twolak.springframework.beer.order.service.repositories.BeerOrderRepository;
 import twolak.springframework.beer.order.service.repositories.CustomerRepository;
 import twolak.springframework.beer.order.service.services.BeerOrderService;
@@ -59,7 +59,7 @@ public class BeerOrderServiceImpl implements BeerOrderService {
             BeerOrder beerOrder = this.beerOrderMapper.dtoToBeerOrder(beerOrderDto);
             beerOrder.setId(null);//should be null
             beerOrder.setCustomer(customerOptional.get());
-            beerOrder.setOrderStatus(BeerOrderStatusEnum.NEW);
+            beerOrder.setBeerOrderStatus(BeerOrderStatusEnum.NEW);
             beerOrder.getBeerOrderLines().forEach(line -> {
                 line.setBeerOrder(beerOrder);
                 this.beerService.getBeerByUpc(line.getUpc()).ifPresent(beerDto-> {
@@ -87,7 +87,7 @@ public class BeerOrderServiceImpl implements BeerOrderService {
     @Override
     public void pickupOrder(UUID customerId, UUID orderId) {
         BeerOrder beerOrder = getOrder(customerId, orderId);
-        beerOrder.setOrderStatus(BeerOrderStatusEnum.PICKED_UP);
+        beerOrder.setBeerOrderStatus(BeerOrderStatusEnum.PICKED_UP);
         this.beerOrderRepository.save(beerOrder);
     }
     

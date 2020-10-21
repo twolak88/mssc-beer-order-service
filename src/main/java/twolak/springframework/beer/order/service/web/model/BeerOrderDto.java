@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import twolak.springframework.beer.order.service.domain.BeerOrderStatusEnum;
 
 /**
  *
@@ -32,6 +31,6 @@ public class BeerOrderDto extends BaseItem {
     private UUID customerId;
     private String customerRef;
     private Set<BeerOrderLineDto> beerOrderLines;
-    private BeerOrderStatusEnum orderStatus;
+    private BeerOrderStatusEnum orderStatus;//can be change to string
     private String orderStatusCallbackUrl;
 }
