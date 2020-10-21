@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import twolak.springframework.beer.order.service.domain.BeerOrder;
 import twolak.springframework.beer.order.service.domain.Customer;
-import twolak.springframework.beer.order.service.domain.OrderStatusEnum;
+import twolak.springframework.beer.order.service.domain.BeerOrderStatusEnum;
 
 /**
  *
@@ -19,7 +19,7 @@ public interface BeerOrderRepository extends JpaRepository<BeerOrder, UUID> {
     
     Page<BeerOrder> findAllByCustomer(Customer customer, Pageable pageable);
     
-    List<BeerOrder> findAllByOrderStatus(OrderStatusEnum orderStatusEnum);
+    List<BeerOrder> findAllByOrderStatus(BeerOrderStatusEnum orderStatusEnum);
     
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     BeerOrder findOneById(UUID id);
