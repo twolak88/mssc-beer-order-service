@@ -3,7 +3,7 @@ package twolak.springframework.beer.order.service.web.mappers;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import twolak.springframework.beer.order.service.domain.BeerOrder;
-import twolak.springframework.beer.order.service.web.model.BeerOrderDto;
+import twolak.springframework.brewery.model.BeerOrderDto;
 
 /**
  *

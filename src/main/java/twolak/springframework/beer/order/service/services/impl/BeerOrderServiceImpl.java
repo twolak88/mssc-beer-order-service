@@ -19,8 +19,8 @@ import twolak.springframework.beer.order.service.repositories.CustomerRepository
 import twolak.springframework.beer.order.service.services.BeerOrderService;
 import twolak.springframework.beer.order.service.services.beer.BeerService;
 import twolak.springframework.beer.order.service.web.mappers.BeerOrderMapper;
-import twolak.springframework.beer.order.service.web.model.BeerOrderDto;
-import twolak.springframework.beer.order.service.web.model.BeerOrderPagedList;
+import twolak.springframework.brewery.model.BeerOrderDto;
+import twolak.springframework.brewery.model.BeerOrderPagedList;
 
 /**
  *

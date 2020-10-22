@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import twolak.springframework.beer.order.service.domain.BeerOrderLine;
 import twolak.springframework.beer.order.service.services.beer.BeerService;
-import twolak.springframework.beer.order.service.web.model.BeerDto;
-import twolak.springframework.beer.order.service.web.model.BeerOrderLineDto;
+import twolak.springframework.brewery.model.BeerDto;
+import twolak.springframework.brewery.model.BeerOrderLineDto;
 
 /**
  *

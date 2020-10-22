@@ -1,4 +1,4 @@
-package twolak.springframework.beer.order.service.web.model;
+package twolak.springframework.brewery.model;
 
 /**
  *

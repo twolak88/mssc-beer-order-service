@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import twolak.springframework.beer.order.service.services.BeerOrderService;
-import twolak.springframework.beer.order.service.web.model.BeerOrderDto;
-import twolak.springframework.beer.order.service.web.model.BeerOrderPagedList;
+import twolak.springframework.brewery.model.BeerOrderDto;
+import twolak.springframework.brewery.model.BeerOrderPagedList;
 
 /**
  *

@@ -2,7 +2,7 @@ package twolak.springframework.beer.order.service.services.beer;
 
 import java.util.Optional;
 import java.util.UUID;
-import twolak.springframework.beer.order.service.web.model.BeerDto;
+import twolak.springframework.brewery.model.BeerDto;
 
 /**
  *

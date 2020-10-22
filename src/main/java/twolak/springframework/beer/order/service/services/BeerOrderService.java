@@ -2,8 +2,8 @@ package twolak.springframework.beer.order.service.services;
 
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
-import twolak.springframework.beer.order.service.web.model.BeerOrderDto;
-import twolak.springframework.beer.order.service.web.model.BeerOrderPagedList;
+import twolak.springframework.brewery.model.BeerOrderDto;
+import twolak.springframework.brewery.model.BeerOrderPagedList;
 
 /**
  *

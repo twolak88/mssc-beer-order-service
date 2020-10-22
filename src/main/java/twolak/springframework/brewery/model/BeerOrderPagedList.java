@@ -1,4 +1,4 @@
-package twolak.springframework.beer.order.service.web.model;
+package twolak.springframework.brewery.model;
 
 import java.util.List;
 import org.springframework.data.domain.PageImpl;
