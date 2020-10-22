@@ -12,6 +12,7 @@ import twolak.springframework.beer.order.service.domain.BeerOrder;
 import twolak.springframework.beer.order.service.domain.BeerOrderEventEnum;
 import twolak.springframework.beer.order.service.domain.BeerOrderStatusEnum;
 import twolak.springframework.beer.order.service.repositories.BeerOrderRepository;
+import twolak.springframework.beer.order.service.services.Interceptors.BeerOrderStateChangeInterceptor;
 
 /**
  *
@@ -21,8 +22,10 @@ import twolak.springframework.beer.order.service.repositories.BeerOrderRepositor
 @Service
 public class BeerOrderManagerImpl implements BeerOrderManager {
 
+    public static final String BEER_ORDER_ID_HEADER = "beer_order_id";
     private final StateMachineFactory<BeerOrderStatusEnum, BeerOrderEventEnum> stateMachineFactory;
     private final BeerOrderRepository beerOrderRepository;
+    private final BeerOrderStateChangeInterceptor beerOrderStateChangeInterceptor;
     
     @Transactional
     @Override
@@ -39,6 +42,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     private void sendBeerOrderEvent(BeerOrder beerOrder, BeerOrderEventEnum beerOrderEventEnum) {
         StateMachine<BeerOrderStatusEnum, BeerOrderEventEnum> stateMachine = build(beerOrder);
         Message message = MessageBuilder.withPayload(beerOrderEventEnum)
+                .setHeader(BEER_ORDER_ID_HEADER, beerOrder.getId())
                 .build();
         stateMachine.sendEvent(message);
     }
@@ -48,6 +52,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         stateMachine.stop();
         
         stateMachine.getStateMachineAccessor().doWithAllRegions(stateMachineAccessor -> {
+            stateMachineAccessor.addStateMachineInterceptor(beerOrderStateChangeInterceptor);
             stateMachineAccessor.resetStateMachine(new DefaultStateMachineContext<>(beerOrder.getBeerOrderStatus(), null, null, null));
         });
         stateMachine.start();
