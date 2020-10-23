@@ -1,5 +1,6 @@
 package twolak.springframework.beer.order.service.services;
 
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -36,6 +37,16 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         BeerOrder savedBeerOrder = this.beerOrderRepository.save(beerOrder);
         sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATE_ORDER);
         return savedBeerOrder;
+    }
+    
+    @Override
+    public void processValidationResult(UUID beerOrderId, Boolean isValid) {
+        BeerOrder beerOrder = this.beerOrderRepository.findOneById(beerOrderId);
+        if (isValid) {
+            sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_PASSED);
+        } else {
+            sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_FAILED);
+        }
     }
     
     
