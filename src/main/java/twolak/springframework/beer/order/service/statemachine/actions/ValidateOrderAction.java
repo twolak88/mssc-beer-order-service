@@ -14,7 +14,7 @@ import twolak.springframework.beer.order.service.domain.BeerOrderStatusEnum;
 import twolak.springframework.beer.order.service.repositories.BeerOrderRepository;
 import twolak.springframework.beer.order.service.services.BeerOrderManagerImpl;
 import twolak.springframework.beer.order.service.web.mappers.BeerOrderMapper;
-import twolak.springframework.brewery.model.ValidateBeerOrderRequest;
+import twolak.springframework.brewery.model.events.ValidateBeerOrderRequest;
 
 /**
  *
