@@ -14,6 +14,7 @@ import twolak.springframework.beer.order.service.domain.BeerOrderEventEnum;
 import twolak.springframework.beer.order.service.domain.BeerOrderStatusEnum;
 import twolak.springframework.beer.order.service.repositories.BeerOrderRepository;
 import twolak.springframework.beer.order.service.services.Interceptors.BeerOrderStateChangeInterceptor;
+import twolak.springframework.brewery.model.BeerOrderDto;
 
 /**
  *
@@ -52,6 +53,37 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         }
     }
     
+    @Override
+    public void beerOrderAllocationPassed(BeerOrderDto beerOrderDto) {
+        BeerOrder beerOrder = this.beerOrderRepository.findOneById(beerOrderDto.getId());
+        sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_SUCCESS);
+        updateAllocationQuantity(beerOrderDto);
+    }
+
+    @Override
+    public void beerOrderAllocationPendingInventory(BeerOrderDto beerOrderDto) {
+        BeerOrder beerOrder = this.beerOrderRepository.findOneById(beerOrderDto.getId());
+        sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_NO_INVENTORY);
+        updateAllocationQuantity(beerOrderDto);
+    }
+
+    @Override
+    public void beerOrderAllocationFailed(BeerOrderDto beerOrderDto) {
+        BeerOrder beerOrder = this.beerOrderRepository.findOneById(beerOrderDto.getId());
+        sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_FAILED);
+    }
+    
+    private void updateAllocationQuantity(BeerOrderDto beerOrderDto) {
+        BeerOrder allocatedBeerOrder = this.beerOrderRepository.findOneById(beerOrderDto.getId());
+        allocatedBeerOrder.getBeerOrderLines().forEach((beerOrderLine) -> {
+            beerOrderDto.getBeerOrderLines().forEach((beerOrderLineDto) -> {
+                if (beerOrderLine.getId().equals(beerOrderLineDto.getBeerId())) {
+                    beerOrderLine.setQuantityAllocated(beerOrderLineDto.getQuantityAllocated());
+                }
+            });
+        });
+        this.beerOrderRepository.saveAndFlush(allocatedBeerOrder);
+    }
     
     private void sendBeerOrderEvent(BeerOrder beerOrder, BeerOrderEventEnum beerOrderEventEnum) {
         StateMachine<BeerOrderStatusEnum, BeerOrderEventEnum> stateMachine = build(beerOrder);
