@@ -87,15 +87,24 @@ public class BeerOrderManagerIT {
         
         BeerOrder savedBeerOrder = this.beerOrderManager.newBeerOrder(beerOrder);
         
-        Awaitility.await().atMost(1, TimeUnit.MINUTES).untilAsserted(() -> {
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             BeerOrder foundBeerOrder = this.beerOrderRepository.findById(beerOrder.getId()).get();
             Assertions.assertEquals(BeerOrderStatusEnum.ALLOCATED, foundBeerOrder.getBeerOrderStatus());
+        });
+        
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+            BeerOrder foundBeerOrder = this.beerOrderRepository.findById(beerOrder.getId()).get();
+            BeerOrderLine beerOrderLine = foundBeerOrder.getBeerOrderLines().iterator().next();
+            Assertions.assertEquals(beerOrderLine.getOrderQuantity(), beerOrderLine.getQuantityAllocated());
         });
         
         savedBeerOrder = this.beerOrderRepository.findById(savedBeerOrder.getId()).get();
         
         Assertions.assertNotNull(savedBeerOrder);
         Assertions.assertEquals(BeerOrderStatusEnum.ALLOCATED, savedBeerOrder.getBeerOrderStatus());
+        savedBeerOrder.getBeerOrderLines().forEach((beerOrderLine) -> {
+            Assertions.assertEquals(beerOrderLine.getOrderQuantity(), beerOrderLine.getQuantityAllocated());
+        });
     }
     
 //    @Test
