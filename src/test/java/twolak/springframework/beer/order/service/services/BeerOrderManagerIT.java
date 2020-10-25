@@ -89,7 +89,7 @@ public class BeerOrderManagerIT {
         
         Awaitility.await().atMost(1, TimeUnit.MINUTES).untilAsserted(() -> {
             BeerOrder foundBeerOrder = this.beerOrderRepository.findById(beerOrder.getId()).get();
-            Assertions.assertEquals(BeerOrderStatusEnum.ALLOCATION_PENDING, foundBeerOrder.getBeerOrderStatus());
+            Assertions.assertEquals(BeerOrderStatusEnum.ALLOCATED, foundBeerOrder.getBeerOrderStatus());
         });
         
         savedBeerOrder = this.beerOrderRepository.findById(savedBeerOrder.getId()).get();
