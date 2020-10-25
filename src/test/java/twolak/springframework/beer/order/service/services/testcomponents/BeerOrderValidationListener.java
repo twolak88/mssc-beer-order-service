@@ -19,6 +19,8 @@ import twolak.springframework.brewery.model.events.ValidateBeerOrderResult;
 @Component
 public class BeerOrderValidationListener {
     
+    public static final String FAIL_VALIDATION = "fail-validation";
+    
     private final JmsTemplate jmsTemplate;
     
     @JmsListener(destination = JmsConfig.VALIDATE_ORDER_QUEUE)
@@ -26,9 +28,11 @@ public class BeerOrderValidationListener {
         
         ValidateBeerOrderRequest beerOrderRequest = (ValidateBeerOrderRequest) message.getPayload();
         
+        boolean isValid = !FAIL_VALIDATION.equals(beerOrderRequest.getBeerOrderDto().getCustomerRef());
+        
         this.jmsTemplate.convertAndSend(JmsConfig.VALIDATE_ORDER_RESULT_QUEUE, 
                 ValidateBeerOrderResult.builder()
-                .isValid(Boolean.TRUE)
+                .isValid(isValid)
                 .orderId(beerOrderRequest.getBeerOrderDto().getId())
                 .build());
     }
