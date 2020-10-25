@@ -33,7 +33,7 @@ public class BeerOrderStateChangeInterceptor extends StateMachineInterceptorAdap
         Optional.ofNullable(message)
                 .flatMap(msg -> Optional.ofNullable((String) msg.getHeaders().getOrDefault(BeerOrderManagerImpl.BEER_ORDER_ID_HEADER, " ")))
                 .ifPresent(beerOrderId -> {
-                    log.debug("Saving satate for order id: " + beerOrderId.toString() + " Status: " + state.getId());
+                    log.debug("Saving state for order id: " + beerOrderId.toString() + " Status: " + state.getId());
                     Optional<BeerOrder> beerOrderOptional = this.beerOrderRepository.findById(UUID.fromString(beerOrderId));
                     beerOrderOptional.ifPresentOrElse((beerOrder) -> {
                         beerOrder.setBeerOrderStatus(state.getId());
