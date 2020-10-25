@@ -28,15 +28,21 @@ public class BeerOrderStateChangeInterceptor extends StateMachineInterceptorAdap
     private final BeerOrderRepository beerOrderRepository;
 
     @Override
-    public void preStateChange(State<BeerOrderStatusEnum, BeerOrderEventEnum> state, Message<BeerOrderEventEnum> message, 
+    public void preStateChange(State<BeerOrderStatusEnum, BeerOrderEventEnum> state, Message<BeerOrderEventEnum> message,
             Transition<BeerOrderStatusEnum, BeerOrderEventEnum> transition, StateMachine<BeerOrderStatusEnum, BeerOrderEventEnum> stateMachine) {
         Optional.ofNullable(message)
-                .flatMap(msg -> Optional.ofNullable((UUID) msg.getHeaders().getOrDefault(BeerOrderManagerImpl.BEER_ORDER_ID_HEADER, UUID.fromString(" "))))
+                .flatMap(msg -> Optional.ofNullable((String) msg.getHeaders().getOrDefault(BeerOrderManagerImpl.BEER_ORDER_ID_HEADER, " ")))
                 .ifPresent(beerOrderId -> {
                     log.debug("Saving satate for order id: " + beerOrderId.toString() + " Status: " + state.getId());
-                    BeerOrder beerOrder = this.beerOrderRepository.getOne(beerOrderId);
-                    beerOrder.setBeerOrderStatus(state.getId());
-                    this.beerOrderRepository.saveAndFlush(beerOrder);
+                    Optional<BeerOrder> beerOrderOptional = this.beerOrderRepository.findById(UUID.fromString(beerOrderId));
+                    beerOrderOptional.ifPresentOrElse((beerOrder) -> {
+                        beerOrder.setBeerOrderStatus(state.getId());
+                        this.beerOrderRepository.saveAndFlush(beerOrder);
+                    }, () -> {
+                        String errorMessage = "Beer Order not found! Id: " + beerOrderId;
+                        log.error(errorMessage);
+                        throw new RuntimeException(errorMessage);
+                    });
                 });
     }
 }

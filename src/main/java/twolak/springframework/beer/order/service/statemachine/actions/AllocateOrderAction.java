@@ -1,5 +1,6 @@
 package twolak.springframework.beer.order.service.statemachine.actions;
 
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +29,20 @@ public class AllocateOrderAction implements Action<BeerOrderStatusEnum, BeerOrde
     private final BeerOrderRepository beerOrderRepository;
     private final BeerOrderMapper beerOrderMapper;
     private final JmsTemplate jmsTemplate;
-    
+
     @Override
     public void execute(StateContext<BeerOrderStatusEnum, BeerOrderEventEnum> context) {
-        BeerOrder beerOrder = this.beerOrderRepository.getOne((UUID) context.getMessage().getHeaders().get(BeerOrderManagerImpl.BEER_ORDER_ID_HEADER));
-        this.jmsTemplate.convertAndSend(JmsConfig.ALLOCATE_ORDER_QUEUE, AllocateBeerOrderRequest
-                .builder().beerOrderDto(this.beerOrderMapper.beerOrderToDto(beerOrder)).build());
-        log.debug("Sent allocation request to queue for order id: " + beerOrder.getId());
+        UUID beerOrderId = UUID.fromString((String) context.getMessage()
+                .getHeaders().get(BeerOrderManagerImpl.BEER_ORDER_ID_HEADER));
+        Optional<BeerOrder> beerOrderOptional = this.beerOrderRepository.findById(beerOrderId);
+        beerOrderOptional.ifPresentOrElse((beerOrder) -> {
+            this.jmsTemplate.convertAndSend(JmsConfig.ALLOCATE_ORDER_QUEUE, AllocateBeerOrderRequest
+                    .builder().beerOrderDto(this.beerOrderMapper.beerOrderToDto(beerOrder)).build());
+            log.debug("Sent allocation request to queue for order id: " + beerOrder.getId());
+        }, () -> {
+            String errorMessage = "Beer Order not found! Id: " + beerOrderId.toString();
+            log.error(errorMessage);
+            throw new RuntimeException(errorMessage);
+        });
     }
 }
