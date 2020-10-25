@@ -19,6 +19,9 @@ import twolak.springframework.brewery.model.events.AllocateBeerOrderResult;
 @Component
 public class BeerOrderAllocationListener {
     
+    public static final String FAIL_ALLOCATION = "fail-allocation";
+    public static final String PARTIAL_ALLOCATION = "partial-allocation";
+    
     private final JmsTemplate jmsTemplate;
     
     @JmsListener(destination = JmsConfig.ALLOCATE_ORDER_QUEUE)
@@ -26,15 +29,17 @@ public class BeerOrderAllocationListener {
         
         AllocateBeerOrderRequest allocateBeerOrderRequest = (AllocateBeerOrderRequest) message.getPayload();
         
+        final boolean pendingInventory = PARTIAL_ALLOCATION.equals(allocateBeerOrderRequest.getBeerOrderDto().getCustomerRef());
+        
         allocateBeerOrderRequest.getBeerOrderDto().getBeerOrderLines().forEach((beerOrderLineDto) -> {
-            beerOrderLineDto.setQuantityAllocated(beerOrderLineDto.getOrderQuantity());
+            beerOrderLineDto.setQuantityAllocated(beerOrderLineDto.getOrderQuantity()-(pendingInventory ? 1 : 0));
         });
         
         this.jmsTemplate.convertAndSend(JmsConfig.ALLOCATE_ORDER_RESULT_QUEUE, 
                 AllocateBeerOrderResult.builder()
                 .beerOrderDto(allocateBeerOrderRequest.getBeerOrderDto())
-                .allocationError(Boolean.FALSE)
-                .pendingInventory(Boolean.FALSE)
+                .allocationError(FAIL_ALLOCATION.equals(allocateBeerOrderRequest.getBeerOrderDto().getCustomerRef()))
+                .pendingInventory(pendingInventory)
                 .build());
     }
 }

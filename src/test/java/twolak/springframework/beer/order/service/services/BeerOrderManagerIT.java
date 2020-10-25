@@ -27,6 +27,7 @@ import twolak.springframework.beer.order.service.domain.Customer;
 import twolak.springframework.beer.order.service.repositories.BeerOrderRepository;
 import twolak.springframework.beer.order.service.repositories.CustomerRepository;
 import twolak.springframework.beer.order.service.services.beer.impl.BeerServiceImpl;
+import twolak.springframework.beer.order.service.services.testcomponents.BeerOrderAllocationListener;
 import twolak.springframework.beer.order.service.services.testcomponents.BeerOrderValidationListener;
 import twolak.springframework.brewery.model.BeerDto;
 
@@ -123,6 +124,42 @@ public class BeerOrderManagerIT {
         Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             BeerOrder foundBeerOrder = this.beerOrderRepository.findById(beerOrder.getId()).get();
             Assertions.assertEquals(BeerOrderStatusEnum.VALIDATION_EXCEPTION, foundBeerOrder.getBeerOrderStatus());
+        });
+    }
+    
+    @Test
+    public void testFailedAllocation() throws JsonProcessingException {
+        BeerDto beerDto = BeerDto.builder().id(beerId).upc(BEER_UPC).build();
+
+        this.wireMockServer.stubFor(WireMock.get(BeerServiceImpl.BEER_UPC_PATH_V1 + BEER_UPC)
+                .willReturn(WireMock.okJson(this.objectMapper.writeValueAsString(beerDto))));
+
+        BeerOrder beerOrder = createBeerOrder();
+        beerOrder.setCustomerRef(BeerOrderAllocationListener.FAIL_ALLOCATION);
+
+        BeerOrder savedBeerOrder = this.beerOrderManager.newBeerOrder(beerOrder);
+
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+            BeerOrder foundBeerOrder = this.beerOrderRepository.findById(beerOrder.getId()).get();
+            Assertions.assertEquals(BeerOrderStatusEnum.ALLOCATION_EXCEPTION, foundBeerOrder.getBeerOrderStatus());
+        });
+    }
+    
+    @Test
+    public void testPartialAllocation() throws JsonProcessingException {
+        BeerDto beerDto = BeerDto.builder().id(beerId).upc(BEER_UPC).build();
+
+        this.wireMockServer.stubFor(WireMock.get(BeerServiceImpl.BEER_UPC_PATH_V1 + BEER_UPC)
+                .willReturn(WireMock.okJson(this.objectMapper.writeValueAsString(beerDto))));
+
+        BeerOrder beerOrder = createBeerOrder();
+        beerOrder.setCustomerRef(BeerOrderAllocationListener.PARTIAL_ALLOCATION);
+
+        BeerOrder savedBeerOrder = this.beerOrderManager.newBeerOrder(beerOrder);
+
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+            BeerOrder foundBeerOrder = this.beerOrderRepository.findById(beerOrder.getId()).get();
+            Assertions.assertEquals(BeerOrderStatusEnum.PENDING_INVENTORY, foundBeerOrder.getBeerOrderStatus());
         });
     }
     
