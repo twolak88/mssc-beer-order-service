@@ -29,8 +29,8 @@ public class BeerOrderBootStrap implements CommandLineRunner {
     }
 
     private void loadCustomerData() {
-        if(this.customerRepository.count() == 0) {
-            Customer savedCustomer = this.customerRepository.save(Customer.builder()
+        if(this.customerRepository.findAllByCustomerNameLike(TASTING_ROOM).size() == 0) {
+            Customer savedCustomer = this.customerRepository.saveAndFlush(Customer.builder()
                     .customerName(TASTING_ROOM)
                     .apiKey(UUID.randomUUID())
                     .build());
