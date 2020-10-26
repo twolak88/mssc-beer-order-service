@@ -18,22 +18,27 @@ import twolak.springframework.brewery.model.events.ValidateBeerOrderResult;
 @RequiredArgsConstructor
 @Component
 public class BeerOrderValidationListener {
-    
+
     public static final String FAIL_VALIDATION = "fail-validation";
-    
+    public static final String CANCEL_VALIDATION = "cancel-validation";
+
     private final JmsTemplate jmsTemplate;
-    
+
     @JmsListener(destination = JmsConfig.VALIDATE_ORDER_QUEUE)
     public void listen(Message message) {
-        
+
         ValidateBeerOrderRequest beerOrderRequest = (ValidateBeerOrderRequest) message.getPayload();
-        
-        boolean isValid = !FAIL_VALIDATION.equals(beerOrderRequest.getBeerOrderDto().getCustomerRef());
-        
-        this.jmsTemplate.convertAndSend(JmsConfig.VALIDATE_ORDER_RESULT_QUEUE, 
-                ValidateBeerOrderResult.builder()
-                .isValid(isValid)
-                .orderId(beerOrderRequest.getBeerOrderDto().getId())
-                .build());
+
+        log.debug("Validating order... ID: " + beerOrderRequest.getBeerOrderDto().getId());
+
+        if (!CANCEL_VALIDATION.equals(beerOrderRequest.getBeerOrderDto().getCustomerRef())) {
+            boolean isValid = !FAIL_VALIDATION.equals(beerOrderRequest.getBeerOrderDto().getCustomerRef());
+
+            this.jmsTemplate.convertAndSend(JmsConfig.VALIDATE_ORDER_RESULT_QUEUE,
+                    ValidateBeerOrderResult.builder()
+                            .isValid(isValid)
+                            .orderId(beerOrderRequest.getBeerOrderDto().getId())
+                            .build());
+        }
     }
 }

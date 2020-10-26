@@ -2,6 +2,7 @@ package twolak.springframework.beer.order.service.services;
 
 import java.util.Optional;
 import java.util.UUID;
+import javax.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -31,6 +32,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     private final StateMachineFactory<BeerOrderStatusEnum, BeerOrderEventEnum> stateMachineFactory;
     private final BeerOrderRepository beerOrderRepository;
     private final BeerOrderStateChangeInterceptor beerOrderStateChangeInterceptor;
+    private final EntityManager entityManager;
 
     @Transactional
     @Override
@@ -46,9 +48,10 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     @Transactional
     @Override
     public void processValidationResult(UUID beerOrderId, Boolean isValid) {
-        Optional<BeerOrder> beerOrderOptional = this.beerOrderRepository.findById(beerOrderId);
+        log.debug("Process validation result for beerOrderId: " + beerOrderId.toString());
+        entityManager.flush();
 
-        beerOrderOptional.ifPresentOrElse((beerOrder) -> {
+        this.beerOrderRepository.findById(beerOrderId).ifPresentOrElse((beerOrder) -> {
             if (isValid) {
                 sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_PASSED);
 
@@ -66,8 +69,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
 
     @Override
     public void beerOrderAllocationPassed(BeerOrderDto beerOrderDto) {
-        Optional<BeerOrder> beerOrderOptional = this.beerOrderRepository.findById(beerOrderDto.getId());
-        beerOrderOptional.ifPresentOrElse((beerOrder) -> {
+        this.beerOrderRepository.findById(beerOrderDto.getId()).ifPresentOrElse((beerOrder) -> {
             sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_SUCCESS);
             updateAllocationQuantity(beerOrderDto);
         }, () -> {
@@ -79,8 +81,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
 
     @Override
     public void beerOrderAllocationPendingInventory(BeerOrderDto beerOrderDto) {
-        Optional<BeerOrder> beerOrderOptional = this.beerOrderRepository.findById(beerOrderDto.getId());
-        beerOrderOptional.ifPresentOrElse((beerOrder) -> {
+        this.beerOrderRepository.findById(beerOrderDto.getId()).ifPresentOrElse((beerOrder) -> {
             sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_NO_INVENTORY);
             updateAllocationQuantity(beerOrderDto);
         }, () -> {
@@ -92,8 +93,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
 
     @Override
     public void beerOrderAllocationFailed(BeerOrderDto beerOrderDto) {
-        Optional<BeerOrder> beerOrderOptional = this.beerOrderRepository.findById(beerOrderDto.getId());
-        beerOrderOptional.ifPresentOrElse((beerOrder) -> {
+        this.beerOrderRepository.findById(beerOrderDto.getId()).ifPresentOrElse((beerOrder) -> {
             sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_FAILED);
         }, () -> {
             String errorMessage = "Beer Order not found! Id: " + beerOrderDto.getId();
@@ -104,10 +104,21 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
 
     @Override
     public void beerOrderPickedUp(UUID beerOrderId) {
-        Optional<BeerOrder> beerOrderOptional = this.beerOrderRepository.findById(beerOrderId);
-        beerOrderOptional.ifPresentOrElse((beerOrder) -> {
+        this.beerOrderRepository.findById(beerOrderId).ifPresentOrElse((beerOrder) -> {
             //TODO
             sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.PICK_UP_ORDER);
+        }, () -> {
+            String errorMessage = "Beer Order not found! Id: " + beerOrderId;
+            log.error(errorMessage);
+            throw new RuntimeException(errorMessage);
+        });
+    }
+
+    @Override
+    public void cancelBeerOrder(UUID beerOrderId) {
+        this.beerOrderRepository.findById(beerOrderId).ifPresentOrElse((beerOrder) -> {
+            //TODO
+            sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.CANCEL_ORDER);
         }, () -> {
             String errorMessage = "Beer Order not found! Id: " + beerOrderId;
             log.error(errorMessage);
