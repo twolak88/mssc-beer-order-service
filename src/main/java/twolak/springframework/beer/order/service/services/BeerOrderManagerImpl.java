@@ -2,7 +2,8 @@ package twolak.springframework.beer.order.service.services;
 
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.EntityManager;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -32,7 +33,6 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     private final StateMachineFactory<BeerOrderStatusEnum, BeerOrderEventEnum> stateMachineFactory;
     private final BeerOrderRepository beerOrderRepository;
     private final BeerOrderStateChangeInterceptor beerOrderStateChangeInterceptor;
-    private final EntityManager entityManager;
 
     @Transactional
     @Override
@@ -49,11 +49,12 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     @Override
     public void processValidationResult(UUID beerOrderId, Boolean isValid) {
         log.debug("Process validation result for beerOrderId: " + beerOrderId.toString());
-        entityManager.flush();
 
         this.beerOrderRepository.findById(beerOrderId).ifPresentOrElse((beerOrder) -> {
             if (isValid) {
                 sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_PASSED);
+                
+                awaitForStatus(beerOrderId, BeerOrderStatusEnum.VALIDATED);
 
                 BeerOrder validatedBeerOrder = this.beerOrderRepository.findById(beerOrderId).get();
                 sendBeerOrderEvent(validatedBeerOrder, BeerOrderEventEnum.ALLOCATE_ORDER);
@@ -71,6 +72,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     public void beerOrderAllocationPassed(BeerOrderDto beerOrderDto) {
         this.beerOrderRepository.findById(beerOrderDto.getId()).ifPresentOrElse((beerOrder) -> {
             sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_SUCCESS);
+            awaitForStatus(beerOrderDto.getId(), BeerOrderStatusEnum.ALLOCATED);
             updateAllocationQuantity(beerOrderDto);
         }, () -> {
             String errorMessage = "Beer Order not found! Id: " + beerOrderDto.getId();
@@ -83,6 +85,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     public void beerOrderAllocationPendingInventory(BeerOrderDto beerOrderDto) {
         this.beerOrderRepository.findById(beerOrderDto.getId()).ifPresentOrElse((beerOrder) -> {
             sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_NO_INVENTORY);
+            awaitForStatus(beerOrderDto.getId(), BeerOrderStatusEnum.PENDING_INVENTORY);
             updateAllocationQuantity(beerOrderDto);
         }, () -> {
             String errorMessage = "Beer Order not found! Id: " + beerOrderDto.getId();
@@ -150,6 +153,36 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
                 .setHeader(BEER_ORDER_ID_HEADER, beerOrder.getId().toString())
                 .build();
         stateMachine.sendEvent(message);
+    }
+    
+    private void awaitForStatus(UUID beerOrderId, BeerOrderStatusEnum beerOrderStatusEnum) {
+        AtomicBoolean found = new AtomicBoolean(false);
+        AtomicInteger loopCount = new AtomicInteger(0);
+        
+        while(!found.get()) {
+            if (loopCount.incrementAndGet() > 10) {
+                found.set(true);
+                log.debug("Loop retries executed");
+            }
+            this.beerOrderRepository.findById(beerOrderId).ifPresentOrElse(beerOrder -> {
+                if (beerOrder.getBeerOrderStatus().equals(beerOrderStatusEnum)) {
+                    found.set(true);
+                    log.debug("Order found");
+                } else {
+                    log.debug("Order Status not matched. Expected: " + beerOrderStatusEnum.name() + " found: " + beerOrder.getBeerOrderStatus().name());
+                }
+            }, () -> {
+                log.debug("Order Not found! Id: " + beerOrderId);
+            });
+            if (!found.get()) {
+                try {
+                    log.debug("Sleeping for retry.");
+                    Thread.sleep(100);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     private StateMachine<BeerOrderStatusEnum, BeerOrderEventEnum> build(BeerOrder beerOrder) {
